@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\Handler\NullSessionHandler;
 use Symfony\Component\HttpFoundation\Session\Session;
 use SessionHandlerInterface;
 
-class SessionProvider implements NetworkComponentAwareInterface
+class SessionProvider implements NetworkComponentAwareInterface, NetworkComponentInterface
 {
     /**
      * @var NetworkComponentInterface

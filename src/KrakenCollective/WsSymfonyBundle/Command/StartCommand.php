@@ -1,12 +1,6 @@
 <?php
 namespace KrakenCollective\WsSymfonyBundle\Command;
 
-use Kraken\Ipc\Socket\SocketListener;
-use Kraken\Loop\Loop;
-use Kraken\Loop\Model\SelectLoop;
-use Kraken\Network\Http\Component\Session\HttpSession;
-use Kraken\Network\NetworkServer;
-use Kraken\Network\Websocket\WsServer;
 use Kraken\Network\NetworkComponentInterface;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -30,26 +24,9 @@ class StartCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $sessionHandler = $this->getContainer()->get('session.handler');
+        $server = $this->getContainer()->get('kraken.ws.server.test_server');
 
-        $loop = new Loop(
-            new SelectLoop()
-        );
-
-        $listener = new SocketListener(
-            'tcp://127.0.0.1:6080',
-            $loop
-        );
-
-        $server = new NetworkServer($listener);
-
-        $component = $this->getComponent();
-
-        $ws = new WsServer(null, new HttpSession(null, $component, $sessionHandler));
-
-        $server->addRoute('/test', $ws);
-
-        $loop->start();
+        $server->start();
     }
 
     /**

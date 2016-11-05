@@ -1,7 +1,7 @@
 services:
     # Loop Models
     kraken.ws.loop_model.select_loop:
-        class: "%kraken_collective_ws_symfony_select_loop%"
+        class: "%kraken_collective.ws_symfony.select_loop%"
         public: false
         tags:
             - { name: kraken.loop_model, alias: select_loop }

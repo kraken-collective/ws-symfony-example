@@ -1,7 +1,9 @@
 parameters:
     # Service classes definitions:
-    kraken_collective_ws_symfony_loop:              Kraken\Loop\Loop
-    kraken_collective_ws_symfony_select_loop:       Kraken\Loop\Model\SelectLoop
-    kraken_collective_ws_symfony_socket_listener:   Kraken\Ipc\Socket\SocketListener
-    kraken_collective_ws_symfony_network_server:    Kraken\Network\NetworkServer
-    kraken_collective_ws_symfony_websocket_server:  Kraken\Network\Websocket\WsServer
+    kraken_collective.ws_symfony.loop:              Kraken\Loop\Loop
+    kraken_collective.ws_symfony.select_loop:       Kraken\Loop\Model\SelectLoop
+    kraken_collective.ws_symfony.socket_listener:   Kraken\Ipc\Socket\SocketListener
+    kraken_collective.ws_symfony.network_server:    Kraken\Network\NetworkServer
+    kraken_collective.ws_symfony.websocket_server:  Kraken\Network\Websocket\WsServer
+    kraken_collective.ws_symfony.session_provider:  KrakenCollective\WsSymfonyBundle\Session\SessionProvider
+    kraken_collective.ws_symfony.server:            KrakenCollective\WsSymfonyBundle\Server\Server

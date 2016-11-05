@@ -21,10 +21,36 @@ class Configuration implements ConfigurationInterface
         $rootNode = $treeBuilder->root('kraken_collective_ws_symfony');
 
         $rootNode
+            ->append($this->getServerNode())
             ->append($this->getSocketListenerNode())
         ;
 
         return $treeBuilder;
+    }
+
+    private function getServerNode()
+    {
+        $builder = new TreeBuilder();
+        $node = $builder->root('server');
+
+        $node
+            ->isRequired()
+            ->requiresAtLeastOneElement()
+            ->useAttributeAsKey('name')
+            ->prototype('array')
+                ->children()
+                    ->scalarNode('listener')->isRequired()->end()
+                    ->scalarNode('component')->defaultValue('kraken.ws.network_component.default')->end()
+                    ->scalarNode('session_handler')->isRequired()->end()
+                    ->arrayNode('routes')
+                        ->requiresAtLeastOneElement()
+                        ->prototype('scalar')->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+
+        return $node;
     }
 
     private function getSocketListenerNode()

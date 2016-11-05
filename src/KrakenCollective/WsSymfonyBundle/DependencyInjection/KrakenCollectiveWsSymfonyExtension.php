@@ -2,7 +2,9 @@
 
 namespace KrakenCollective\WsSymfonyBundle\DependencyInjection;
 
+use ClassesWithParents\D;
 use KrakenCollective\WsSymfonyBundle\Exception\RuntimeException;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Definition;
@@ -15,21 +17,32 @@ use Symfony\Component\DependencyInjection\Loader;
  *
  * @link http://symfony.com/doc/current/cookbook/bundles/extension.html
  */
-class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension
+class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implements CompilerPassInterface
 {
-    const KEY_SOCKET_LISTENER = 'socket_listener';
+    const CONFIG_SERVER = 'server';
+    const CONFIG_SOCKET_LISTENER = 'socket_listener';
 
     const TAG_LOOP_MODEL = 'kraken.loop_model';
 
-    const PARAMETER_LOOP_CLASS = 'kraken_collective_ws_symfony_loop';
-    const PARAMETER_SELECT_LOOP_CLASS = 'kraken_collective_ws_symfony_select_loop';
-    const PARAMETER_SOCKET_LISTENER_CLASS = 'kraken_collective_ws_symfony_socket_listener';
+    const PARAMETER_LOOP_CLASS = 'kraken_collective.ws_symfony.loop';
+    const PARAMETER_SELECT_LOOP_CLASS = 'kraken_collective.ws_symfony.select_loop';
+    const PARAMETER_SOCKET_LISTENER_CLASS = 'kraken_collective.ws_symfony.socket_listener';
+    const PARAMETER_SESSION_PROVIDER_CLASS = 'kraken_collective.ws_symfony.session_provider';
+    const PARAMETER_SERVER_CLASS = 'kraken_collective.ws_symfony.server';
+    const PARAMETER_NETWORK_SERVER_CLASS = 'kraken_collective.ws_symfony.network_server';
+    const PARAMETER_WEBSOCKET_SERVER_CLASS = 'kraken_collective.ws_symfony.websocket_server';
 
-    const LOOP_SERVICE_ID_PREFIX = 'kraken.ws.loop';
-    const LOOP_MODEL_SERVICE_ID_PREFIX = 'kraken.ws.loop_model';
-    const SOCKET_LISTENER_SERVICE_ID_PREFIX = 'kraken.ws.socket_listener';
+    const SERVICE_VENDOR_PREFIX = 'kraken.ws';
 
-    private $loopModelsMap = [];
+    const LOOP_SERVICE_ID_PREFIX = 'loop';
+    const LOOP_MODEL_SERVICE_ID_PREFIX = 'loop_model';
+    const SOCKET_LISTENER_SERVICE_ID_PREFIX = 'socket_listener';
+    const SESSION_PROVIDER_SERVICE_ID_PREFIX = 'session_provider';
+    const SERVER_SERVICE_ID_PREFIX = 'server';
+    const NETWORK_SERVER_SERVICE_ID_PREFIX = 'network_server';
+    const WEBSOCKET_SERVER_SERVICE_ID_PREFIX = 'websocket_server';
+
+    private $mergedConfig;
 
     /**
      * {@inheritdoc}
@@ -40,8 +53,15 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension
         $loader->load('parameters.yml');
         $loader->load('services.yml');
 
+        $this->mergedConfig = $mergedConfig;
+    }
+
+    public function process(ContainerBuilder $container)
+    {
         $this->loadLoops($container);
-        $this->loadSocketListeners($container, $mergedConfig[self::KEY_SOCKET_LISTENER]);
+        $this->loadSocketListeners($container, $this->mergedConfig[self::CONFIG_SOCKET_LISTENER]);
+        $this->loadServers($container, $this->mergedConfig[self::CONFIG_SERVER]);
+
     }
 
     /**
@@ -89,15 +109,6 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension
     }
 
     /**
-     * @param string $loopAlias
-     * @return string
-     */
-    private function getLoopServiceId($loopAlias)
-    {
-        return sprintf('%s.%s', self::LOOP_SERVICE_ID_PREFIX, $loopAlias);
-    }
-
-    /**
      * @param ContainerBuilder $container
      * @param array            $configs
      *
@@ -127,7 +138,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension
         $definition->addArgument($this->getLoopDefinition($container, $config['loop']));
 
         $container->setDefinition(
-            sprintf('%s.%s', self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $socketListenerName),
+            $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $socketListenerName),
             $definition
         );
     }
@@ -144,5 +155,211 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension
         } catch (ServiceNotFoundException $e) {
             throw new RuntimeException(sprintf('LoopModel service aliased "%s" was not found.', $loopAlias));
         }
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param array            $configs
+     *
+     * @return void
+     */
+    private function loadServers(ContainerBuilder $container, array $configs)
+    {
+        foreach ($configs as $serverName => $config) {
+            $this->registerServerComponents($container, $serverName, $config);
+        }
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param string           $serverName
+     * @param array            $config
+     */
+    private function registerServerComponents(ContainerBuilder $container, $serverName, array $config)
+    {
+        $sessionProviderDefinition = $this->registerSessionProvider(
+            $container,
+            $container->getDefinition($config['component']),
+            $container->getDefinition($config['session_handler']),
+            $container->getParameter(self::PARAMETER_SESSION_PROVIDER_CLASS),
+            $serverName
+        );
+
+        $websocketServerDefinition = $this->registerWebsocketServer(
+            $container,
+            $sessionProviderDefinition,
+            $container->getParameter(self::PARAMETER_WEBSOCKET_SERVER_CLASS),
+            $serverName
+        );
+
+        $networkServerDefinition = $this->registerNetworkServer(
+            $container,
+            $container->getDefinition($this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $config['listener'])),
+            $websocketServerDefinition,
+            $container->getParameter(self::PARAMETER_NETWORK_SERVER_CLASS),
+            $config['routes'],
+            $serverName
+        );
+
+        $this->registerServer(
+            $container,
+            $this->getLoopServiceIdFromSocketListener($container, $config['listener']),
+            $networkServerDefinition,
+            $container->getParameter(self::PARAMETER_SERVER_CLASS),
+            $serverName
+        );
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param Definition       $componentDefinition
+     * @param Definition       $sessionHandlerDefinition
+     * @param string           $sessionProviderClass
+     * @param string           $serverName
+     *
+     * @return Definition
+     */
+    private function registerSessionProvider(
+        ContainerBuilder $container,
+        Definition $componentDefinition,
+        Definition $sessionHandlerDefinition,
+        $sessionProviderClass,
+        $serverName
+    ) {
+        $definition = new Definition($sessionProviderClass);
+        $definition->addArgument(null);
+        $definition->addArgument($componentDefinition);
+        $definition->addArgument($sessionHandlerDefinition);
+
+        $container->setDefinition(
+            $this->getServiceId(self::SESSION_PROVIDER_SERVICE_ID_PREFIX, $serverName),
+            $definition
+        );
+
+        return $definition;
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param Definition       $sessionProviderDefinition
+     * @param string           $websocketServerClass
+     * @param string           $serverName
+     *
+     * @return Definition
+     */
+    private function registerWebsocketServer(
+        ContainerBuilder $container,
+        Definition $sessionProviderDefinition,
+        $websocketServerClass,
+        $serverName
+    ) {
+        $definition = new Definition($websocketServerClass);
+        $definition->addArgument(null);
+        $definition->addArgument($sessionProviderDefinition);
+
+        $container->setDefinition(
+            $this->getServiceId(self::WEBSOCKET_SERVER_SERVICE_ID_PREFIX, $serverName),
+            $definition
+        );
+
+        return $definition;
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param Definition       $listenerDefinition
+     * @param Definition       $websocketServerDefinition
+     * @param string           $networkServerClass
+     * @param array            $routes
+     * @param string           $serverName
+     *
+     * @return Definition
+     */
+    private function registerNetworkServer(
+        ContainerBuilder $container,
+        Definition $listenerDefinition,
+        Definition $websocketServerDefinition,
+        $networkServerClass,
+        array $routes,
+        $serverName
+    ) {
+        $definition = new Definition($networkServerClass);
+        $definition->addArgument($listenerDefinition);
+
+        foreach ($routes as $route) {
+            $definition->addMethodCall('addRoute', [$route, $websocketServerDefinition]);
+        }
+
+        $container->setDefinition(
+            $this->getServiceId(self::NETWORK_SERVER_SERVICE_ID_PREFIX, $serverName),
+            $definition
+        );
+
+        return $definition;
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param Definition       $loopDefinition
+     * @param Definition       $networkServerDefinition
+     * @param string           $serverClass
+     * @param string           $serverName
+     */
+    private function registerServer(
+        ContainerBuilder $container,
+        Definition $loopDefinition,
+        Definition $networkServerDefinition,
+        $serverClass,
+        $serverName
+    ) {
+        $definition = new Definition($serverClass);
+        $definition->addArgument($loopDefinition);
+        $definition->addArgument($networkServerDefinition);
+
+        $container->setDefinition(
+            $this->getServiceId(self::SERVER_SERVICE_ID_PREFIX, $serverName),
+            $definition
+        );
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param string           $socketListenerName
+     * @return Definition
+     */
+    private function getLoopServiceIdFromSocketListener(ContainerBuilder $container, $socketListenerName)
+    {
+        $definition = $container->getDefinition(
+            $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $socketListenerName)
+        );
+        return $definition->getArgument(1);
+    }
+
+    /**
+     * @param string $loopAlias
+     * @return string
+     */
+    private function getLoopServiceId($loopAlias)
+    {
+        return $this->getServiceId(self::LOOP_SERVICE_ID_PREFIX, $loopAlias);
+    }
+
+    /**
+     * @param string $servicePrefix
+     * @param string $serviceAlias
+     * @return string
+     */
+    private function getServiceId($servicePrefix, $serviceAlias)
+    {
+        return sprintf('%s.%s', $this->getFullServicePrefix($servicePrefix), $serviceAlias);
+    }
+
+    /**
+     * @param string $servicePrefix
+     * @return string
+     */
+    private function getFullServicePrefix($servicePrefix)
+    {
+        return sprintf('%s.%s', self::SERVICE_VENDOR_PREFIX, $servicePrefix);
     }
 }
