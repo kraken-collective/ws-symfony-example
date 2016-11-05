@@ -8,3 +8,11 @@ services:
         class: AppBundle\Service\NetworkComponent\TestNetworkComponent
         arguments:
             - "@security.token_storage"
+
+    app.messages.client_listener:
+        class: KrakenCollective\WsSymfonyBundle\Event\ClientEventListener
+        tags:
+            - { name: kernel.event_listener, event: 'kraken.ws.client_connected', method: onClientConnect }
+            - { name: kernel.event_listener, event: 'kraken.ws.client_disconnected', method: onClientDisconnect }
+            - { name: kernel.event_listener, event: 'kraken.ws.client_message', method: onClientMessage }
+            - { name: kernel.event_listener, event: 'kraken.ws.client_error', method: onClientError }
