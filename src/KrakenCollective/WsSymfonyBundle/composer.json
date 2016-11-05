@@ -1,5 +1,5 @@
 {
-  "name": "kraken-collective/ws-symfony",
+  "name": "kraken-collective/ws-symfony-bundle",
   "type": "symfony-bundle",
   "description": "Symfony Websocket Bundle",
   "keywords": ["websocket", "kraken", "symfony", "bundle"],

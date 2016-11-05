@@ -73,6 +73,17 @@ snc_redis:
         client: session
     clients:
         session:
-            type: predis
-            alias: session
-            dsn: redis://localhost
+            type:   predis
+            alias:  session
+            dsn:    redis://localhost
+
+kraken_collective_ws_symfony:
+    socket_listener:
+        test_listener:
+            address:    127.0.0.1
+            port:       6080
+        kamil_parowa:
+            address:    192.168.1.1
+            port:       6081
+            protocol:   udp
+            loop:       select_loop

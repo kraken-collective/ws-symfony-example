@@ -1,0 +1,7 @@
+parameters:
+    # Service classes definitions:
+    kraken_collective_ws_symfony_loop:              Kraken\Loop\Loop
+    kraken_collective_ws_symfony_select_loop:       Kraken\Loop\Model\SelectLoop
+    kraken_collective_ws_symfony_socket_listener:   Kraken\Ipc\Socket\SocketListener
+    kraken_collective_ws_symfony_network_server:    Kraken\Network\NetworkServer
+    kraken_collective_ws_symfony_websocket_server:  Kraken\Network\Websocket\WsServer

@@ -3,8 +3,8 @@
 
 # Directories
 vendor
+var
 
 # Misc
-# composer.lock
-parameters.yml
+app/config/parameters.yml
 
