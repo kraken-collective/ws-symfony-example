@@ -1,0 +1,10 @@
+# IDE
+.idea
+
+# Directories
+vendor
+
+# Misc
+# composer.lock
+parameters.yml
+
