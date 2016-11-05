@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "72cefa00e830bb4b72e168d04615bfc6",
-    "content-hash": "256f0cbda43e64e3d368999569ff240e",
+    "hash": "c635713e2dadb13dd8def443a78fa891",
+    "content-hash": "10a3c80df8f1ff1349ea8959aa817fd7",
     "packages": [
         {
             "name": "cboden/ratchet",
@@ -1512,16 +1512,16 @@
         },
         {
             "name": "kraken-php/network",
-            "version": "v0.3.2",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kraken-php/network.git",
-                "reference": "7a8420707e1f7c930bf653dd8c7b59d9c59e1f63"
+                "reference": "ddc9707bd2d57a63c54a9be2786623fe83cb0b34"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kraken-php/network/zipball/7a8420707e1f7c930bf653dd8c7b59d9c59e1f63",
-                "reference": "7a8420707e1f7c930bf653dd8c7b59d9c59e1f63",
+                "url": "https://api.github.com/repos/kraken-php/network/zipball/ddc9707bd2d57a63c54a9be2786623fe83cb0b34",
+                "reference": "ddc9707bd2d57a63c54a9be2786623fe83cb0b34",
                 "shasum": ""
             },
             "require": {
@@ -1571,7 +1571,7 @@
                 "websocket",
                 "ws"
             ],
-            "time": "2016-10-12 18:28:54"
+            "time": "2016-11-05 15:04:58"
         },
         {
             "name": "kraken-php/stream",
@@ -3216,7 +3216,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "kraken-php/network": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
