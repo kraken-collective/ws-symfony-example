@@ -61,7 +61,6 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         $this->loadLoops($container);
         $this->loadSocketListeners($container, $this->mergedConfig[self::CONFIG_SOCKET_LISTENER]);
         $this->loadServers($container, $this->mergedConfig[self::CONFIG_SERVER]);
-
     }
 
     /**
@@ -136,6 +135,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
 
         $definition->addArgument(sprintf('%s://%s:%s', $config['protocol'], $config['address'], $config['port']));
         $definition->addArgument($this->getLoopDefinition($container, $config['loop']));
+        $definition->setPublic(false);
 
         $container->setDefinition(
             $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $socketListenerName),
@@ -230,6 +230,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         $definition->addArgument(null);
         $definition->addArgument($componentDefinition);
         $definition->addArgument($sessionHandlerDefinition);
+        $definition->setPublic(false);
 
         $container->setDefinition(
             $this->getServiceId(self::SESSION_PROVIDER_SERVICE_ID_PREFIX, $serverName),
