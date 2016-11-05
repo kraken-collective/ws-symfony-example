@@ -1,0 +1,3 @@
+kraken_collective_ws_symfony_homepage:
+    path:     /
+    defaults: { _controller: KrakenCollectiveWsSymfonyBundle:Default:index }
