@@ -26,8 +26,9 @@ framework:
     trusted_proxies: ~
     session:
         # http://symfony.com/doc/current/reference/configuration/framework.html#handler-id
-        handler_id:  session.handler.native_file
-        save_path:   "%kernel.root_dir%/../var/sessions/%kernel.environment%"
+#        handler_id:  session.handler.native_file
+#        save_path:   "%kernel.root_dir%/../var/sessions/%kernel.environment%"
+        handler_id:  snc_redis.session.handler
     fragments:       ~
     http_method_override: true
     assets: ~
@@ -66,3 +67,12 @@ swiftmailer:
     username:  "%mailer_user%"
     password:  "%mailer_password%"
     spool:     { type: memory }
+
+snc_redis:
+    session:
+        client: session
+    clients:
+        session:
+            type: predis
+            alias: session
+            dsn: redis://localhost
