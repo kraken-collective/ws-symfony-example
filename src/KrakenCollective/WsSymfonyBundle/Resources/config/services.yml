@@ -5,3 +5,10 @@ services:
         public: false
         tags:
             - { name: kraken.loop_model, alias: select_loop }
+
+    # Default Component
+    kraken.ws.network_component.default:
+        class: KrakenCollective\WsSymfonyBundle\Server\ServerDefaultComponent
+        public: false
+        arguments:
+            - '@event_dispatcher'
