@@ -6,19 +6,29 @@ use KrakenCollective\WsSymfonyBundle\Event\ClientErrorEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientMessageEvent;
 use SplObjectStorage;
+use Symfony\Component\CssSelector\Parser\Token;
+use Symfony\Component\Security\Core\Authentication\RememberMe\TokenProviderInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 class ChatEventListener
 {
+    /**
+     * @var TokenStorageInterface
+     */
+    protected $tokenProvider;
+
     /**
      * @var
      */
     private $conns;
 
     /**
-     *
+     * @param TokenStorageInterface $tokenStorage
      */
-    public function __construct()
+    public function __construct(TokenStorageInterface $tokenStorage)
     {
+        $this->tokenStorage = $tokenStorage;
         $this->conns = new SplObjectStorage();
     }
 
@@ -99,6 +109,10 @@ class ChatEventListener
     {
         $conn = $event->getConnection();
         $message = $event->getMessage();
+
+//        $token = $this->tokenStorage->getToken();
+//        $user = $token->getUser();
+//        $username = $user instanceof UserInterface ? $user->getUsername() : $user;
 
         $data = json_decode($message->read(), true);
         $type = $data['type'];
