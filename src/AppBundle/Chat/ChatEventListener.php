@@ -6,6 +6,7 @@ use KrakenCollective\WsSymfonyBundle\Event\ClientErrorEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientMessageEvent;
 use SplObjectStorage;
+use Symfony\Component\Security\Core\Authentication\Token\AnonymousToken;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -105,12 +106,17 @@ class ChatEventListener
      */
     public function onClientMessage(ClientMessageEvent $event)
     {
-        $this->hash = spl_object_hash($this->tokenStorage);
         $conn = $event->getConnection();
         $message = $event->getMessage();
 
         $token = $this->tokenStorage->getToken();
-        $user = $token->getUser();
+
+        if ($token instanceof AnonymousToken) {
+            $user = 'anonymous';
+        } else {
+            $user = $token->getUser();
+        }
+
         $username = $user instanceof UserInterface ? $user->getUsername() : $user;
 
         $data = json_decode($message->read(), true);
@@ -139,7 +145,10 @@ class ChatEventListener
      * @param ClientErrorEvent $event
      */
     public function onClientError(ClientErrorEvent $event)
-    {}
+    {
+        $conn = $event->getConnection();
+        $conn->close(); // TODO fix it - crashes with "Maximum function nesting level of 'X' reached, aborting!"
+    }
 
     /**
      * @param mixed[] $message

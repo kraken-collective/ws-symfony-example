@@ -48,7 +48,7 @@ class Configuration implements ConfigurationInterface
                                 ->requiresAtLeastOneElement()
                                 ->prototype('scalar')->end()
                             ->end()
-                            ->scalarNode('allow_anonymous')->defaultValue(false)->end()
+                            ->booleanNode('allow_anonymous')->defaultValue(false)->end()
                         ->end()
                     ->end()
                     ->arrayNode('routes')
