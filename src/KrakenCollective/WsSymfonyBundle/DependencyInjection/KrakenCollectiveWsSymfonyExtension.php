@@ -9,6 +9,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
 use Symfony\Component\DependencyInjection\Loader;
 
@@ -93,7 +95,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
                     $this->registerLoop(
                         $container,
                         $tag['alias'],
-                        $container->getDefinition($loopModelId)
+                        $loopModelId
                     );
                 }
             }
@@ -103,15 +105,15 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     /**
      * @param ContainerBuilder $container
      * @param string           $loopAlias
-     * @param Definition       $loopModelDefinition
+     * @param string           $loopModelId
      */
     private function registerLoop(
         ContainerBuilder $container,
         $loopAlias,
-        Definition $loopModelDefinition
+        $loopModelId
     ) {
         $definition = new Definition($container->getParameter(self::LOOP_CLASS_PARAM));
-        $definition->addArgument($loopModelDefinition);
+        $definition->addArgument(new Reference($loopModelId));
 
         $container->setDefinition(
             $this->getLoopServiceId($loopAlias),
@@ -144,30 +146,13 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         $definition = new Definition($container->getParameter(self::SOCKET_LISTENER_CLASS_PARAM));
 
         $definition->addArgument(sprintf('%s://%s:%s', $config['protocol'], $config['host'], $config['port']));
-        $definition->addArgument($this->getLoopDefinition($container, $config['loop']));
+        $definition->addArgument(new Reference($this->getLoopServiceId($config['loop'])));
         $definition->setPublic(false);
 
         $container->setDefinition(
             $this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $socketListenerName),
             $definition
         );
-    }
-
-    /**
-     * @param ContainerBuilder $container
-     * @param string           $loopAlias
-     *
-     * @return Definition
-     *
-     * @throws RuntimeException
-     */
-    private function getLoopDefinition(ContainerBuilder $container, $loopAlias)
-    {
-        try {
-            return $container->getDefinition($this->getLoopServiceId($loopAlias));
-        } catch (ServiceNotFoundException $e) {
-            throw new RuntimeException(sprintf('LoopModel service aliased "%s" does not exist.', $loopAlias));
-        }
     }
 
     /**
@@ -196,35 +181,31 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
             $this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $config['listener'])
         );
 
-        $authenticationProviderDefinition = $this->registerAuthenticationProvider(
+        $this->registerAuthenticationProvider(
             $container,
             $config['authentication'],
             $serverName
         );
 
-        $serverComponentDefinition = $this->registerServerComponent(
+        $this->registerServerComponent(
             $container,
-            $authenticationProviderDefinition,
             $serverName
         );
 
-        $sessionProviderDefinition = $this->registerSessionProvider(
+        $this->registerSessionProvider(
             $container,
-            $serverComponentDefinition,
-            $container->getDefinition($config['session_handler']),
+            $config['session_handler'],
             $serverName
         );
 
-        $websocketServerDefinition = $this->registerWebsocketServer(
+        $this->registerWebsocketServer(
             $container,
-            $sessionProviderDefinition,
             $serverName
         );
 
-        $networkServerDefinition = $this->registerNetworkServer(
+        $this->registerNetworkServer(
             $container,
-            $socketListenerDefinition,
-            $websocketServerDefinition,
+            $config['listener'],
             $config['routes'],
             $serverName
         );
@@ -238,8 +219,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         $this->registerServer(
             $container,
             $this->getLoopServiceIdFromSocketListener($container, $config['listener']),
-            $socketListenerDefinition,
-            $networkServerDefinition,
+            $config['listener'],
             $serverName
         );
     }
@@ -248,13 +228,11 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
      * @param ContainerBuilder $container
      * @param array            $config
      * @param string           $serverName
-     *
-     * @return Definition
      */
     private function registerAuthenticationProvider(ContainerBuilder $container, array $config, $serverName)
     {
         $definition = new Definition($container->getParameter(self::AUTHENTICATION_PROVIDER_CLASS_PARAM));
-        $definition->addArgument($container->getDefinition('security.token_storage'));
+        $definition->addArgument(new Reference('security.token_storage'));
         $definition->addArgument($config['firewalls']);
         $definition->addArgument($config['allow_anonymous']);
         $definition->setPublic(false);
@@ -263,116 +241,98 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
             $this->getServiceId(self::AUTHENTICATION_PROVIDER_ID_PREFIX, $serverName),
             $definition
         );
-
-        return $definition;
     }
 
     /**
      * @param ContainerBuilder $container
-     * @param Definition       $authenticationProviderDefinition
      * @param string           $serverName
-     *
-     * @return Definition
      */
     private function registerServerComponent(
         ContainerBuilder $container,
-        Definition $authenticationProviderDefinition,
         $serverName
     ) {
         $definition = new Definition($container->getParameter(self::SERVER_COMPONENT_CLASS_PARAM));
-        $definition->addArgument($container->getDefinition('kraken.ws.dispatcher.client_event'));
-        $definition->addArgument($authenticationProviderDefinition);
+        $definition->addArgument(new Reference('kraken.ws.dispatcher.client_event'));
+        $definition->addArgument(
+            new Reference($this->getServiceId(self::AUTHENTICATION_PROVIDER_ID_PREFIX, $serverName))
+        );
         $definition->setPublic(false);
 
         $container->setDefinition(
             $this->getServiceId(self::SERVER_COMPONENT_ID_PREFIX, $serverName),
             $definition
         );
-
-        return $definition;
     }
 
     /**
      * @param ContainerBuilder $container
-     * @param Definition       $componentDefinition
-     * @param Definition       $sessionHandlerDefinition
+     * @param string           $sessionHandlerId
      * @param string           $serverName
-     *
-     * @return Definition
      */
     private function registerSessionProvider(
         ContainerBuilder $container,
-        Definition $componentDefinition,
-        Definition $sessionHandlerDefinition,
+        $sessionHandlerId,
         $serverName
     ) {
         $definition = new Definition($container->getParameter(self::SESSION_PROVIDER_CLASS_PARAM));
         $definition->addArgument(null);
-        $definition->addArgument($componentDefinition);
-        $definition->addArgument($sessionHandlerDefinition);
+        $definition->addArgument(new Reference($this->getServiceId(self::SERVER_COMPONENT_ID_PREFIX, $serverName)));
+        $definition->addArgument(new Reference($sessionHandlerId));
         $definition->setPublic(false);
 
         $container->setDefinition(
             $this->getServiceId(self::SESSION_PROVIDER_ID_PREFIX, $serverName),
             $definition
         );
-
-        return $definition;
     }
 
     /**
      * @param ContainerBuilder $container
-     * @param Definition       $sessionProviderDefinition
      * @param string           $serverName
-     *
-     * @return Definition
      */
     private function registerWebsocketServer(
         ContainerBuilder $container,
-        Definition $sessionProviderDefinition,
         $serverName
     ) {
         $definition = new Definition($container->getParameter(self::WEBSOCKET_SERVER_CLASS_PARAM));
         $definition->addArgument(null);
-        $definition->addArgument($sessionProviderDefinition);
+        $definition->addArgument(new Reference($this->getServiceId(self::SESSION_PROVIDER_ID_PREFIX, $serverName)));
 
         $container->setDefinition(
             $this->getServiceId(self::WEBSOCKET_SERVER_ID_PREFIX, $serverName),
             $definition
         );
-
-        return $definition;
     }
 
     /**
      * @param ContainerBuilder $container
-     * @param Definition       $listenerDefinition
-     * @param Definition       $websocketServerDefinition
+     * @param string           $listenerAlias
      * @param array            $routes
      * @param string           $serverName
-     *
-     * @return Definition
      */
     private function registerNetworkServer(
         ContainerBuilder $container,
-        Definition $listenerDefinition,
-        Definition $websocketServerDefinition,
+        $listenerAlias,
         array $routes,
         $serverName
     ) {
         $definition = new Definition($container->getParameter(self::NETWORK_SERVER_CLASS_PARAM));
-        $definition->addArgument($listenerDefinition);
+        $definition->addArgument(new Reference($this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $listenerAlias)));
 
         foreach ($routes as $route) {
-            $definition->addMethodCall('addRoute', [$route, $websocketServerDefinition]);
+            $definition->addMethodCall(
+                'addRoute',
+                [
+                    $route,
+                    new Reference($this->getServiceId(self::WEBSOCKET_SERVER_ID_PREFIX, $serverName))
+                ]
+            );
         }
 
         $container->setDefinition(
             $this->getServiceId(self::NETWORK_SERVER_ID_PREFIX, $serverName),
             $definition
         );
-
-        return $definition;
     }
 
     /**
@@ -396,22 +356,20 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
 
     /**
      * @param ContainerBuilder $container
-     * @param Definition       $loopDefinition
-     * @param Definition       $socketListenerDefinition
-     * @param Definition       $networkServerDefinition
+     * @param Reference        $loopReference
+     * @param string           $listenerAlias
      * @param string           $serverName
      */
     private function registerServer(
         ContainerBuilder $container,
-        Definition $loopDefinition,
-        Definition $socketListenerDefinition,
-        Definition $networkServerDefinition,
+        Reference $loopReference,
+        $listenerAlias,
         $serverName
     ) {
         $definition = new Definition($container->getParameter(self::SERVER_CLASS_PARAM));
-        $definition->addArgument($loopDefinition);
-        $definition->addArgument($socketListenerDefinition);
-        $definition->addArgument($networkServerDefinition);
+        $definition->addArgument($loopReference);
+        $definition->addArgument(new Reference($this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $listenerAlias)));
+        $definition->addArgument(new Reference($this->getServiceId(self::NETWORK_SERVER_ID_PREFIX, $serverName)));
         $definition->addTag(self::TAG_SERVER, ['alias' => $serverName]);
 
         $container->setDefinition(
@@ -423,13 +381,14 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     /**
      * @param ContainerBuilder $container
      * @param string           $socketListenerName
-     * @return Definition
+     * @return string
      */
     private function getLoopServiceIdFromSocketListener(ContainerBuilder $container, $socketListenerName)
     {
         $definition = $container->getDefinition(
             $this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $socketListenerName)
         );
+
         return $definition->getArgument(1);
     }
 

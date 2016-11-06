@@ -35,6 +35,7 @@ class AuthenticationProvider implements AuthenticationProviderInterface
         $this->tokenStorage = $tokenStorage;
         $this->firewalls = $firewalls;
         $this->allowAnonymous = $allowAnonymous;
+        $this->hash = spl_object_hash($tokenStorage);
     }
 
     /**

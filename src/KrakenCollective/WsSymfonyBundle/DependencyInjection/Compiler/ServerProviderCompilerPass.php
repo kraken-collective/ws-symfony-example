@@ -21,6 +21,24 @@ class ServerProviderCompilerPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
+        $nonShared = [];
+        $notFound = [];
+
+        $serviceIds = $container->getServiceIds();
+
+        foreach ($serviceIds as $serviceId) {
+            if (!$container->hasDefinition($serviceId)) {
+                $notFound[] = $serviceId;
+                continue;
+            }
+
+            $def = $container->getDefinition($serviceId);
+            if (!$def->isShared()) {
+                $nonShared[] = $def;
+            }
+        }
+
+
         try {
             $serverProviderDefinition = $container->getDefinition(self::PARAMETER_SERVER_PROVIDER_ID);
             $serverConfigProviderDefinition = $container->getDefinition(self::PARAMETER_SERVER_CONFIG_PROVIDER_ID);

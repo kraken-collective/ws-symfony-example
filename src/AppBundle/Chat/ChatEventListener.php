@@ -6,8 +6,6 @@ use KrakenCollective\WsSymfonyBundle\Event\ClientErrorEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientMessageEvent;
 use SplObjectStorage;
-use Symfony\Component\CssSelector\Parser\Token;
-use Symfony\Component\Security\Core\Authentication\RememberMe\TokenProviderInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -107,12 +105,13 @@ class ChatEventListener
      */
     public function onClientMessage(ClientMessageEvent $event)
     {
+        $this->hash = spl_object_hash($this->tokenStorage);
         $conn = $event->getConnection();
         $message = $event->getMessage();
 
-//        $token = $this->tokenStorage->getToken();
-//        $user = $token->getUser();
-//        $username = $user instanceof UserInterface ? $user->getUsername() : $user;
+        $token = $this->tokenStorage->getToken();
+        $user = $token->getUser();
+        $username = $user instanceof UserInterface ? $user->getUsername() : $user;
 
         $data = json_decode($message->read(), true);
         $type = $data['type'];
@@ -127,7 +126,7 @@ class ChatEventListener
                     'name'  => $conn->data['name'],
                     'color' => $conn->data['color'],
                     'date'  => date('H:i:s'),
-                    'mssg'  => $data
+                    'mssg'  => sprintf('[%s] %s', $username, $data)
                 ]
             ];
             return $this->broadcast($bubble);

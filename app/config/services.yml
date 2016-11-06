@@ -1,7 +1,8 @@
 services:
     app.messages.client_listener:
         class: AppBundle\Chat\ChatEventListener
-        autowire: true
+        arguments:
+            - "@security.token_storage"
         tags:
             - { name: kernel.event_listener, event: 'kraken.ws.client_connected', method: onClientConnect }
             - { name: kernel.event_listener, event: 'kraken.ws.client_disconnected', method: onClientDisconnect }

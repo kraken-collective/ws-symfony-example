@@ -12,8 +12,7 @@ use KrakenCollective\WsSymfonyBundle\Dispatcher\ClientEventDispatcher;
 use KrakenCollective\WsSymfonyBundle\Event\ClientErrorEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientMessageEvent;
-use KrakenCollective\WsSymfonyBundle\Event\Events;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class ServerComponent implements NetworkComponentInterface
 {
