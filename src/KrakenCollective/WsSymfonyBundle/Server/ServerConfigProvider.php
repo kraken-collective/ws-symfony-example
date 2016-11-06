@@ -3,14 +3,14 @@ namespace KrakenCollective\WsSymfonyBundle\Server;
 
 use KrakenCollective\WsSymfonyBundle\Server\Provider\AbstractProvider;
 
-class ServerProvider extends AbstractProvider
+class ServerConfigProvider extends AbstractProvider
 {
     /**
      * @param $alias
      *
-     * @return object | Server
+     * @return object | ServerConfig
      */
-    public function getServer($alias)
+    public function getServerConfig($alias)
     {
         return $this->get($alias);
     }

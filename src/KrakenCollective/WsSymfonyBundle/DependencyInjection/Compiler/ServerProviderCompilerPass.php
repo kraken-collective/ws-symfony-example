@@ -10,8 +10,9 @@ use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 
 class ServerProviderCompilerPass implements CompilerPassInterface
 {
-    const PARAMETER_SERVICE_PROVIDER_ID = 'kraken.ws.server_provider';
-    const METHOD_REGISTER_SERVER = 'registerServer';
+    const PARAMETER_SERVER_PROVIDER_ID = 'kraken.ws.server_provider';
+    const PARAMETER_SERVER_CONFIG_PROVIDER_ID = 'kraken.ws.server_config_provider';
+    const METHOD_REGISTER_SERVICE = 'registerService';
 
     /**
      * @param ContainerBuilder $container
@@ -21,8 +22,19 @@ class ServerProviderCompilerPass implements CompilerPassInterface
     public function process(ContainerBuilder $container)
     {
         try {
-            $serverProviderDefinition = $this->getServerProviderDefinition($container);
-            $this->registerServersInProvider($container, $serverProviderDefinition);
+            $serverProviderDefinition = $container->getDefinition(self::PARAMETER_SERVER_PROVIDER_ID);
+            $serverConfigProviderDefinition = $container->getDefinition(self::PARAMETER_SERVER_CONFIG_PROVIDER_ID);
+
+            $this->registerServicesInProvider(
+                $container,
+                $serverProviderDefinition,
+                KrakenCollectiveWsSymfonyExtension::TAG_SERVER
+            );
+            $this->registerServicesInProvider(
+                $container,
+                $serverConfigProviderDefinition,
+                KrakenCollectiveWsSymfonyExtension::TAG_SERVER_CONFIG
+            );
         } catch (ServiceNotFoundException $e) {
             return;
         }
@@ -30,30 +42,21 @@ class ServerProviderCompilerPass implements CompilerPassInterface
 
     /**
      * @param ContainerBuilder $container
-     *
-     * @return Definition
-     */
-    private function getServerProviderDefinition(ContainerBuilder $container)
-    {
-        return $container->getDefinition(self::PARAMETER_SERVICE_PROVIDER_ID);
-    }
-
-    /**
-     * @param ContainerBuilder $container
-     * @param Definition       $serverProviderDefinition
+     * @param Definition       $providerDefinition
+     * @param string           $tag
      *
      * @return void
      */
-    private function registerServersInProvider(ContainerBuilder $container, Definition $serverProviderDefinition)
+    private function registerServicesInProvider(ContainerBuilder $container, Definition $providerDefinition, $tag)
     {
-        $serverIds = $container->findTaggedServiceIds(KrakenCollectiveWsSymfonyExtension::TAG_SERVER);
+        $serviceIds = $container->findTaggedServiceIds($tag);
 
-        foreach ($serverIds as $serverId => $tags) {
+        foreach ($serviceIds as $serviceId => $tags) {
             foreach ($tags as $tag) {
                 if (isset($tag['alias'])) {
-                    $serverProviderDefinition->addMethodCall(
-                        self::METHOD_REGISTER_SERVER,
-                        [$tag['alias'], $serverId]
+                    $providerDefinition->addMethodCall(
+                        self::METHOD_REGISTER_SERVICE,
+                        [$tag['alias'], $serviceId]
                     );
                 }
             }

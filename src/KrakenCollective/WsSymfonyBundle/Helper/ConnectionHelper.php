@@ -1,20 +1,27 @@
 <?php
 namespace KrakenCollective\WsSymfonyBundle\Helper;
 
-use KrakenCollective\WsSymfonyBundle\Server\Server;
+use KrakenCollective\WsSymfonyBundle\Server\ServerConfig;
 
 class ConnectionHelper
 {
     /**
-     * @param Server $server
+     * @param ServerConfig $serverConfig
      * @param string $token In most cases - session ID
      * @param string $route
      * @param string $protocol
      *
      * @return string
      */
-    public function buildWebsocketAddress(Server $server, $token, $route = '/', $protocol = 'ws')
+    public function buildWebsocketAddress(ServerConfig $serverConfig, $token, $route = '/', $protocol = 'ws')
     {
-        return sprintf('%s://%s%s?token=%s', $protocol, $server->getLocalAddress(), $route, $token);
+        return sprintf(
+            '%s://%s:%s%s?token=%s',
+            $protocol,
+            $serverConfig->getHost(),
+            $serverConfig->getPort(),
+            $route,
+            $token
+        );
     }
 }

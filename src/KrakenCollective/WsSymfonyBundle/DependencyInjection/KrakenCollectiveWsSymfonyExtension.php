@@ -24,12 +24,14 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
 
     const TAG_LOOP_MODEL = 'kraken.loop_model';
     const TAG_SERVER = 'kraken.server';
+    const TAG_SERVER_CONFIG = 'kraken.server_config';
 
     const PARAMETER_LOOP_CLASS = 'kraken_collective.ws_symfony.loop';
     const PARAMETER_SELECT_LOOP_CLASS = 'kraken_collective.ws_symfony.select_loop';
     const PARAMETER_SOCKET_LISTENER_CLASS = 'kraken_collective.ws_symfony.socket_listener';
     const PARAMETER_SESSION_PROVIDER_CLASS = 'kraken_collective.ws_symfony.session_provider';
     const PARAMETER_SERVER_CLASS = 'kraken_collective.ws_symfony.server';
+    const PARAMETER_SERVER_CONFIG_CLASS = 'kraken_collective.ws_symfony.server_config';
     const PARAMETER_NETWORK_SERVER_CLASS = 'kraken_collective.ws_symfony.network_server';
     const PARAMETER_WEBSOCKET_SERVER_CLASS = 'kraken_collective.ws_symfony.websocket_server';
 
@@ -40,6 +42,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     const SOCKET_LISTENER_SERVICE_ID_PREFIX = 'socket_listener';
     const SESSION_PROVIDER_SERVICE_ID_PREFIX = 'session_provider';
     const SERVER_SERVICE_ID_PREFIX = 'server';
+    const SERVER_CONFIG_SERVICE_ID_PREFIX = 'server_config';
     const NETWORK_SERVER_SERVICE_ID_PREFIX = 'network_server';
     const WEBSOCKET_SERVER_SERVICE_ID_PREFIX = 'websocket_server';
 
@@ -64,7 +67,11 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     {
         $this->loadLoops($container);
         $this->loadSocketListeners($container, $this->mergedConfig[self::CONFIG_SOCKET_LISTENER]);
-        $this->loadServers($container, $this->mergedConfig[self::CONFIG_SERVER]);
+        $this->loadServers(
+            $container,
+            $this->mergedConfig[self::CONFIG_SERVER],
+            $this->mergedConfig[self::CONFIG_SOCKET_LISTENER]
+        );
     }
 
     /**
@@ -145,7 +152,10 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     /**
      * @param ContainerBuilder $container
      * @param string           $loopAlias
+     *
      * @return Definition
+     *
+     * @throws RuntimeException
      */
     private function getLoopDefinition(ContainerBuilder $container, $loopAlias)
     {
@@ -159,13 +169,14 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     /**
      * @param ContainerBuilder $container
      * @param array            $configs
+     * @param array            $listenersConfig
      *
      * @return void
      */
-    private function loadServers(ContainerBuilder $container, array $configs)
+    private function loadServers(ContainerBuilder $container, array $configs, array $listenersConfig)
     {
         foreach ($configs as $serverName => $config) {
-            $this->loadServer($container, $serverName, $config);
+            $this->loadServer($container, $serverName, $config, $listenersConfig);
         }
     }
 
@@ -173,8 +184,9 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
      * @param ContainerBuilder $container
      * @param string           $serverName
      * @param array            $config
+     * @param array            $listenersConfig
      */
-    private function loadServer(ContainerBuilder $container, $serverName, array $config)
+    private function loadServer(ContainerBuilder $container, $serverName, array $config, array $listenersConfig)
     {
         $socketListenerDefinition = $container->getDefinition(
             $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $config['listener'])
@@ -198,6 +210,12 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
             $socketListenerDefinition,
             $websocketServerDefinition,
             $config['routes'],
+            $serverName
+        );
+
+        $this->registerServerConfig(
+            $container,
+            $listenersConfig[$config['listener']],
             $serverName
         );
 
@@ -291,6 +309,25 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         );
 
         return $definition;
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param array            $listenerConfig
+     * @param string           $serverName
+     */
+    private function registerServerConfig(ContainerBuilder $container, array $listenerConfig, $serverName)
+    {
+        $definition = new Definition($container->getParameter(self::PARAMETER_SERVER_CONFIG_CLASS));
+        $definition->addArgument($listenerConfig['protocol']);
+        $definition->addArgument($listenerConfig['host']);
+        $definition->addArgument($listenerConfig['port']);
+        $definition->addTag(self::TAG_SERVER_CONFIG, ['alias' => $serverName]);
+
+        $container->setDefinition(
+            $this->getServiceId(self::SERVER_CONFIG_SERVICE_ID_PREFIX, $serverName),
+            $definition
+        );
     }
 
     /**

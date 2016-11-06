@@ -5,24 +5,26 @@ namespace AppBundle\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Router;
+use Symfony\Component\HttpFoundation\Response;
 
 class DefaultController extends Controller
 {
     /**
      * @Route("/", name="homepage")
+     *
+     * @param Request $request
+     *
+     * @return Response
      */
     public function indexAction(Request $request)
     {
-//        $server             = $this->get('kraken.ws.server.test_server');
-//        $connectionHelper   = $this->get('kraken.ws.connection_helper');
+        $serverConfig       = $this->get('kraken.ws.server_config.chat');
+        $connectionHelper   = $this->get('kraken.ws.connection_helper');
         $sessionId          = $request->cookies->get('PHPSESSID');
 
-//        $endpoint = $connectionHelper->buildWebsocketAddress($server, $sessionId, '/test');
-        $endpoint = "ws://127.0.0.1:6080/chat?token=$sessionId";
+        $endpoint           = $connectionHelper->buildWebsocketAddress($serverConfig, $sessionId, '/chat');
 
         return $this->render('default/index.html.twig', [
-            'base_dir' => realpath($this->getParameter('kernel.root_dir').'/..').DIRECTORY_SEPARATOR,
             'endpoint' => $endpoint
         ]);
     }

@@ -1,7 +1,12 @@
 services:
-    # ServerProvider
+    # Providers
     kraken.ws.server_provider:
         class: "%kraken_collective.ws_symfony.server_provider%"
+        calls:
+            - ["setContainer", ["@service_container"]]
+
+    kraken.ws.server_config_provider:
+        class: "%kraken_collective.ws_symfony.server_config_provider%"
         calls:
             - ["setContainer", ["@service_container"]]
 
