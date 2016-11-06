@@ -132,7 +132,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     {
         $definition = new Definition($container->getParameter(self::PARAMETER_SOCKET_LISTENER_CLASS));
 
-        $definition->addArgument(sprintf('%s://%s:%s', $config['protocol'], $config['address'], $config['port']));
+        $definition->addArgument(sprintf('%s://%s:%s', $config['protocol'], $config['host'], $config['port']));
         $definition->addArgument($this->getLoopDefinition($container, $config['loop']));
         $definition->setPublic(false);
 
@@ -176,6 +176,10 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
      */
     private function loadServer(ContainerBuilder $container, $serverName, array $config)
     {
+        $socketListenerDefinition = $container->getDefinition(
+            $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $config['listener'])
+        );
+
         $sessionProviderDefinition = $this->registerSessionProvider(
             $container,
             $container->getDefinition($config['component']),
@@ -191,9 +195,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
 
         $networkServerDefinition = $this->registerNetworkServer(
             $container,
-            $container->getDefinition(
-                $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $config['listener'])
-            ),
+            $socketListenerDefinition,
             $websocketServerDefinition,
             $config['routes'],
             $serverName
@@ -202,6 +204,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         $this->registerServer(
             $container,
             $this->getLoopServiceIdFromSocketListener($container, $config['listener']),
+            $socketListenerDefinition,
             $networkServerDefinition,
             $serverName
         );
@@ -293,17 +296,20 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     /**
      * @param ContainerBuilder $container
      * @param Definition       $loopDefinition
+     * @param Definition       $socketListenerDefinition
      * @param Definition       $networkServerDefinition
      * @param string           $serverName
      */
     private function registerServer(
         ContainerBuilder $container,
         Definition $loopDefinition,
+        Definition $socketListenerDefinition,
         Definition $networkServerDefinition,
         $serverName
     ) {
         $definition = new Definition($container->getParameter(self::PARAMETER_SERVER_CLASS));
         $definition->addArgument($loopDefinition);
+        $definition->addArgument($socketListenerDefinition);
         $definition->addArgument($networkServerDefinition);
         $definition->addTag(self::TAG_SERVER, ['alias' => $serverName]);
 

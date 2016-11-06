@@ -18,3 +18,7 @@ services:
         public: false
         arguments:
             - "@event_dispatcher"
+
+    # Misc
+    kraken.ws.connection_helper:
+        class: KrakenCollective\WsSymfonyBundle\Helper\ConnectionHelper

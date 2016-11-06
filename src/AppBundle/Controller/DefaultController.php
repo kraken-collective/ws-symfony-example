@@ -5,6 +5,7 @@ namespace AppBundle\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Router;
 
 class DefaultController extends Controller
 {
@@ -13,15 +14,15 @@ class DefaultController extends Controller
      */
     public function indexAction(Request $request)
     {
-        $sessionId = $request->cookies->get('PHPSESSID');
-        $address = '127.0.0.1';
-        $port = 6080;
+        $server             = $this->get('kraken.ws.server.test_server');
+        $connectionHelper   = $this->get('kraken.ws.connection_helper');
+        $sessionId          = $request->cookies->get('PHPSESSID');
+
+        $websocketServerAddress = $connectionHelper->buildWebsocketAddress($server, $sessionId, '/test');
 
         return $this->render('default/index.html.twig', [
             'base_dir' => realpath($this->getParameter('kernel.root_dir').'/..').DIRECTORY_SEPARATOR,
-            'token' => $sessionId,
-            'address' => $address,
-            'port' => $port
+            'websocketServerAddress' => $websocketServerAddress
         ]);
     }
 }

@@ -87,5 +87,5 @@ kraken_collective_ws_symfony:
 
     socket_listener:
         test_listener:
-            address:    127.0.0.1
-            port:       6080
+            host: 127.0.0.1
+            port: 6080

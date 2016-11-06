@@ -65,7 +65,7 @@ class Configuration implements ConfigurationInterface
             ->prototype('array')
                 ->children()
                     ->scalarNode('protocol')->defaultValue('tcp')->end()
-                    ->scalarNode('address')->isRequired()->end()
+                    ->scalarNode('host')->isRequired()->end()
                     ->integerNode('port')->isRequired()->end()
                     ->scalarNode('loop')->defaultValue('select_loop')->end()
                 ->end()
