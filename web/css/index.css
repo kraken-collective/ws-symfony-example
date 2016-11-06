@@ -175,6 +175,12 @@ input, textarea
     color: #FFF;
     text-align: center;
 }
+.chat-toolbar .actions
+{
+    display: block;
+    float: right;
+    padding-top: 0.4rem;
+}
 .chat-message
 {
     position: relative;
@@ -464,7 +470,7 @@ input, textarea
 {
     margin: 16px 0;
 }
-.login-form-container button
+.button
 {
     display: block;
     background: #f4f4f4;
@@ -473,11 +479,16 @@ input, textarea
     cursor: pointer;
     margin: 0 auto;
     border-radius: 6px;
+    text-decoration: none;
 }
-.login-form-container button:hover
+.button:hover
 {
     background-color: #6b02af;
     color: #f4f4f4;
+}
+.button-sm
+{
+    padding: 5px 10px;
 }
 .login-form-container label
 {
