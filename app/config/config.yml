@@ -79,13 +79,13 @@ snc_redis:
 
 kraken_collective_ws_symfony:
     server:
-        test_server:
-            listener: test_listener
+        chat:
+            listener: chat_listener
             session_handler: snc_redis.session.handler
             routes:
-                - "/test"
+                - "/chat"
 
     socket_listener:
-        test_listener:
+        chat_listener:
             host: 127.0.0.1
             port: 6080

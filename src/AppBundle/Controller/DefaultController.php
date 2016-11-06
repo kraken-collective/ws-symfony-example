@@ -14,11 +14,11 @@ class DefaultController extends Controller
      */
     public function indexAction(Request $request)
     {
-        $server             = $this->get('kraken.ws.server.test_server');
+        $server             = $this->get('kraken.ws.server.chat');
         $connectionHelper   = $this->get('kraken.ws.connection_helper');
         $sessionId          = $request->cookies->get('PHPSESSID');
 
-        $websocketServerAddress = $connectionHelper->buildWebsocketAddress($server, $sessionId, '/test');
+        $websocketServerAddress = $connectionHelper->buildWebsocketAddress($server, $sessionId, '/chat');
 
         return $this->render('default/index.html.twig', [
             'base_dir' => realpath($this->getParameter('kernel.root_dir').'/..').DIRECTORY_SEPARATOR,
