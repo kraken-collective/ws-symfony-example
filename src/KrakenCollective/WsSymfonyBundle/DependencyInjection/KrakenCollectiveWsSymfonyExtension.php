@@ -177,10 +177,6 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
      */
     private function loadServer(ContainerBuilder $container, $serverName, array $config, array $listenersConfig)
     {
-        $socketListenerDefinition = $container->getDefinition(
-            $this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $config['listener'])
-        );
-
         $this->registerAuthenticationProvider(
             $container,
             $config['authentication'],
