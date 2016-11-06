@@ -55,15 +55,3 @@
     </div>
 </div>
 {% endblock %}
-
-{% block stylesheets %}
-    {% stylesheets 'css/*' %}
-        <link rel="stylesheet" href="{{ asset_url }}" />
-    {% endstylesheets %}
-{% endblock %}
-
-{% block scripts %}
-    {% javascripts 'js/*' %}
-        <script type="text/javascript" src="{{ asset_url }}"></script>
-    {% endjavascripts %}
-{% endblock %}

@@ -7,12 +7,16 @@
     <meta name="description" content="">
     <meta name="keywords" content="">
     <meta name="robots" content="all">
-    {% block stylesheets %}{% endblock %}
+    {% block stylesheets %}
+        <link rel="stylesheet" href="/js/index.js" />
+    {% endblock %}
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
 </head>
 <body>
     {% block body %}{% endblock %}
-    {% block javascripts %}{% endblock %}
+    {% block javascripts %}
+        <script type="text/javascript" charset="utf-8" href="{{ asset_url }}" />
+    {% endblock %}
 </body>
 </html>
 
