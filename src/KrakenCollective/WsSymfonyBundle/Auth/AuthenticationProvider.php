@@ -30,7 +30,7 @@ class AuthenticationProvider implements AuthenticationProviderInterface
      * @param array $firewalls
      * @param bool $allowAnonymous
      */
-    public function __construct(TokenStorageInterface $tokenStorage, $firewalls = [], $allowAnonymous = false)
+    public function __construct(TokenStorageInterface $tokenStorage, array $firewalls = [], $allowAnonymous = false)
     {
         $this->tokenStorage = $tokenStorage;
         $this->firewalls = $firewalls;

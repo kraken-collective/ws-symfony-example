@@ -5,25 +5,32 @@ namespace KrakenCollective\WsSymfonyBundle\Server;
 use Kraken\Network\NetworkComponentInterface;
 use Kraken\Network\NetworkConnectionInterface;
 use Kraken\Network\NetworkMessageInterface;
+use KrakenCollective\WsSymfonyBundle\Auth\AuthenticationProviderInterface;
+use KrakenCollective\WsSymfonyBundle\Dispatcher\ClientEventDispatcher;
 use KrakenCollective\WsSymfonyBundle\Event\ClientErrorEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientMessageEvent;
 use KrakenCollective\WsSymfonyBundle\Event\Events;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class ServerDefaultComponent implements NetworkComponentInterface
+class ServerComponent implements NetworkComponentInterface
 {
-    /**
-     * @var EventDispatcherInterface
-     */
+    /** @var ClientEventDispatcher */
     protected $eventDispatcher;
 
+    /** @var AuthenticationProviderInterface */
+    private $authenticationProvider;
+
     /**
-     * @param EventDispatcherInterface $eventDispatcher
+     * @param ClientEventDispatcher           $eventDispatcher
+     * @param AuthenticationProviderInterface $authenticationProvider
      */
-    public function __construct(EventDispatcherInterface $eventDispatcher)
-    {
+    public function __construct(
+        ClientEventDispatcher $eventDispatcher,
+        AuthenticationProviderInterface $authenticationProvider
+    ) {
         $this->eventDispatcher = $eventDispatcher;
+        $this->authenticationProvider = $authenticationProvider;
     }
 
     /**
@@ -33,7 +40,7 @@ class ServerDefaultComponent implements NetworkComponentInterface
     public function handleConnect(NetworkConnectionInterface $conn)
     {
         $event = new ClientEvent(ClientEvent::CONNECTED, $conn);
-        $this->eventDispatcher->dispatch(Events::CLIENT_CONNECTED, $event);
+        $this->eventDispatcher->dispatchClientConnectEvent($event);
     }
 
     /**
@@ -43,7 +50,7 @@ class ServerDefaultComponent implements NetworkComponentInterface
     public function handleDisconnect(NetworkConnectionInterface $conn)
     {
         $event = new ClientEvent(ClientEvent::DISCONNECTED, $conn);
-        $this->eventDispatcher->dispatch(Events::CLIENT_DISCONNECTED, $event);
+        $this->eventDispatcher->dispatchClientDisconnectEvent($event);
     }
 
     /**
@@ -54,7 +61,7 @@ class ServerDefaultComponent implements NetworkComponentInterface
     {
         $event = new ClientMessageEvent(ClientEvent::MESSAGE, $conn);
         $event->setMessage($message);
-        $this->eventDispatcher->dispatch(Events::CLIENT_MESSAGE, $event);
+        $this->eventDispatcher->dispatchClientMessageEvent($event);
     }
 
     /**
@@ -65,6 +72,6 @@ class ServerDefaultComponent implements NetworkComponentInterface
     {
         $event = new ClientErrorEvent(ClientEvent::ERROR, $conn);
         $event->setThrowable($ex);
-        $this->eventDispatcher->dispatch(Events::CLIENT_ERROR, $event);
+        $this->eventDispatcher->dispatchClientErrorEvent($event);
     }
 }

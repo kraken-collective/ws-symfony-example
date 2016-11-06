@@ -26,25 +26,29 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     const TAG_SERVER = 'kraken.server';
     const TAG_SERVER_CONFIG = 'kraken.server_config';
 
-    const PARAMETER_LOOP_CLASS = 'kraken_collective.ws_symfony.loop';
-    const PARAMETER_SELECT_LOOP_CLASS = 'kraken_collective.ws_symfony.select_loop';
-    const PARAMETER_SOCKET_LISTENER_CLASS = 'kraken_collective.ws_symfony.socket_listener';
-    const PARAMETER_SESSION_PROVIDER_CLASS = 'kraken_collective.ws_symfony.session_provider';
-    const PARAMETER_SERVER_CLASS = 'kraken_collective.ws_symfony.server';
-    const PARAMETER_SERVER_CONFIG_CLASS = 'kraken_collective.ws_symfony.server_config';
-    const PARAMETER_NETWORK_SERVER_CLASS = 'kraken_collective.ws_symfony.network_server';
-    const PARAMETER_WEBSOCKET_SERVER_CLASS = 'kraken_collective.ws_symfony.websocket_server';
+    const LOOP_CLASS_PARAM = 'kraken_collective.ws_symfony.loop';
+    const SELECT_LOOP_CLASS_PARAM = 'kraken_collective.ws_symfony.select_loop';
+    const SOCKET_LISTENER_CLASS_PARAM = 'kraken_collective.ws_symfony.socket_listener';
+    const SESSION_PROVIDER_CLASS_PARAM = 'kraken_collective.ws_symfony.session_provider';
+    const AUTHENTICATION_PROVIDER_CLASS_PARAM = 'kraken_collective.ws_symfony.authentication_provider';
+    const SERVER_CLASS_PARAM = 'kraken_collective.ws_symfony.server';
+    const SERVER_CONFIG_CLASS_PARAM = 'kraken_collective.ws_symfony.server_config';
+    const NETWORK_SERVER_CLASS_PARAM = 'kraken_collective.ws_symfony.network_server';
+    const WEBSOCKET_SERVER_CLASS_PARAM = 'kraken_collective.ws_symfony.websocket_server';
+    const SERVER_COMPONENT_CLASS_PARAM = 'kraken_collective.ws_symfony.server_component';
 
-    const SERVICE_VENDOR_PREFIX = 'kraken.ws';
+    const ID_VENDOR_PREFIX = 'kraken.ws';
 
-    const LOOP_SERVICE_ID_PREFIX = 'loop';
-    const LOOP_MODEL_SERVICE_ID_PREFIX = 'loop_model';
-    const SOCKET_LISTENER_SERVICE_ID_PREFIX = 'socket_listener';
-    const SESSION_PROVIDER_SERVICE_ID_PREFIX = 'session_provider';
-    const SERVER_SERVICE_ID_PREFIX = 'server';
-    const SERVER_CONFIG_SERVICE_ID_PREFIX = 'server_config';
-    const NETWORK_SERVER_SERVICE_ID_PREFIX = 'network_server';
-    const WEBSOCKET_SERVER_SERVICE_ID_PREFIX = 'websocket_server';
+    const LOOP_ID_PREFIX = 'loop';
+    const LOOP_MODEL_ID_PREFIX = 'loop_model';
+    const SOCKET_LISTENER_ID_PREFIX = 'socket_listener';
+    const SESSION_PROVIDER_ID_PREFIX = 'session_provider';
+    const AUTHENTICATION_PROVIDER_ID_PREFIX = 'authentication_provider';
+    const SERVER_ID_PREFIX = 'server';
+    const SERVER_CONFIG_ID_PREFIX = 'server_config';
+    const NETWORK_SERVER_ID_PREFIX = 'network_server';
+    const WEBSOCKET_SERVER_ID_PREFIX = 'websocket_server';
+    const SERVER_COMPONENT_ID_PREFIX = 'server_component';
 
     private $mergedConfig;
 
@@ -106,7 +110,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         $loopAlias,
         Definition $loopModelDefinition
     ) {
-        $definition = new Definition($container->getParameter(self::PARAMETER_LOOP_CLASS));
+        $definition = new Definition($container->getParameter(self::LOOP_CLASS_PARAM));
         $definition->addArgument($loopModelDefinition);
 
         $container->setDefinition(
@@ -137,14 +141,14 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
      */
     private function registerSocketListener(ContainerBuilder $container, $socketListenerName, array $config)
     {
-        $definition = new Definition($container->getParameter(self::PARAMETER_SOCKET_LISTENER_CLASS));
+        $definition = new Definition($container->getParameter(self::SOCKET_LISTENER_CLASS_PARAM));
 
         $definition->addArgument(sprintf('%s://%s:%s', $config['protocol'], $config['host'], $config['port']));
         $definition->addArgument($this->getLoopDefinition($container, $config['loop']));
         $definition->setPublic(false);
 
         $container->setDefinition(
-            $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $socketListenerName),
+            $this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $socketListenerName),
             $definition
         );
     }
@@ -189,12 +193,24 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     private function loadServer(ContainerBuilder $container, $serverName, array $config, array $listenersConfig)
     {
         $socketListenerDefinition = $container->getDefinition(
-            $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $config['listener'])
+            $this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $config['listener'])
+        );
+
+        $authenticationProviderDefinition = $this->registerAuthenticationProvider(
+            $container,
+            $config['authentication'],
+            $serverName
+        );
+
+        $serverComponentDefinition = $this->registerServerComponent(
+            $container,
+            $authenticationProviderDefinition,
+            $serverName
         );
 
         $sessionProviderDefinition = $this->registerSessionProvider(
             $container,
-            $container->getDefinition($config['component']),
+            $serverComponentDefinition,
             $container->getDefinition($config['session_handler']),
             $serverName
         );
@@ -230,6 +246,54 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
 
     /**
      * @param ContainerBuilder $container
+     * @param array            $config
+     * @param string           $serverName
+     *
+     * @return Definition
+     */
+    private function registerAuthenticationProvider(ContainerBuilder $container, array $config, $serverName)
+    {
+        $definition = new Definition($container->getParameter(self::AUTHENTICATION_PROVIDER_CLASS_PARAM));
+        $definition->addArgument($container->getDefinition('security.token_storage'));
+        $definition->addArgument($config['firewalls']);
+        $definition->addArgument($config['allow_anonymous']);
+        $definition->setPublic(false);
+
+        $container->setDefinition(
+            $this->getServiceId(self::AUTHENTICATION_PROVIDER_ID_PREFIX, $serverName),
+            $definition
+        );
+
+        return $definition;
+    }
+
+    /**
+     * @param ContainerBuilder $container
+     * @param Definition       $authenticationProviderDefinition
+     * @param string           $serverName
+     *
+     * @return Definition
+     */
+    private function registerServerComponent(
+        ContainerBuilder $container,
+        Definition $authenticationProviderDefinition,
+        $serverName
+    ) {
+        $definition = new Definition($container->getParameter(self::SERVER_COMPONENT_CLASS_PARAM));
+        $definition->addArgument($container->getDefinition('kraken.ws.dispatcher.client_event'));
+        $definition->addArgument($authenticationProviderDefinition);
+        $definition->setPublic(false);
+
+        $container->setDefinition(
+            $this->getServiceId(self::SERVER_COMPONENT_ID_PREFIX, $serverName),
+            $definition
+        );
+
+        return $definition;
+    }
+
+    /**
+     * @param ContainerBuilder $container
      * @param Definition       $componentDefinition
      * @param Definition       $sessionHandlerDefinition
      * @param string           $serverName
@@ -242,14 +306,14 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         Definition $sessionHandlerDefinition,
         $serverName
     ) {
-        $definition = new Definition($container->getParameter(self::PARAMETER_SESSION_PROVIDER_CLASS));
+        $definition = new Definition($container->getParameter(self::SESSION_PROVIDER_CLASS_PARAM));
         $definition->addArgument(null);
         $definition->addArgument($componentDefinition);
         $definition->addArgument($sessionHandlerDefinition);
         $definition->setPublic(false);
 
         $container->setDefinition(
-            $this->getServiceId(self::SESSION_PROVIDER_SERVICE_ID_PREFIX, $serverName),
+            $this->getServiceId(self::SESSION_PROVIDER_ID_PREFIX, $serverName),
             $definition
         );
 
@@ -268,12 +332,12 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         Definition $sessionProviderDefinition,
         $serverName
     ) {
-        $definition = new Definition($container->getParameter(self::PARAMETER_WEBSOCKET_SERVER_CLASS));
+        $definition = new Definition($container->getParameter(self::WEBSOCKET_SERVER_CLASS_PARAM));
         $definition->addArgument(null);
         $definition->addArgument($sessionProviderDefinition);
 
         $container->setDefinition(
-            $this->getServiceId(self::WEBSOCKET_SERVER_SERVICE_ID_PREFIX, $serverName),
+            $this->getServiceId(self::WEBSOCKET_SERVER_ID_PREFIX, $serverName),
             $definition
         );
 
@@ -296,7 +360,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         array $routes,
         $serverName
     ) {
-        $definition = new Definition($container->getParameter(self::PARAMETER_NETWORK_SERVER_CLASS));
+        $definition = new Definition($container->getParameter(self::NETWORK_SERVER_CLASS_PARAM));
         $definition->addArgument($listenerDefinition);
 
         foreach ($routes as $route) {
@@ -304,7 +368,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         }
 
         $container->setDefinition(
-            $this->getServiceId(self::NETWORK_SERVER_SERVICE_ID_PREFIX, $serverName),
+            $this->getServiceId(self::NETWORK_SERVER_ID_PREFIX, $serverName),
             $definition
         );
 
@@ -318,14 +382,14 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
      */
     private function registerServerConfig(ContainerBuilder $container, array $listenerConfig, $serverName)
     {
-        $definition = new Definition($container->getParameter(self::PARAMETER_SERVER_CONFIG_CLASS));
+        $definition = new Definition($container->getParameter(self::SERVER_CONFIG_CLASS_PARAM));
         $definition->addArgument($listenerConfig['protocol']);
         $definition->addArgument($listenerConfig['host']);
         $definition->addArgument($listenerConfig['port']);
         $definition->addTag(self::TAG_SERVER_CONFIG, ['alias' => $serverName]);
 
         $container->setDefinition(
-            $this->getServiceId(self::SERVER_CONFIG_SERVICE_ID_PREFIX, $serverName),
+            $this->getServiceId(self::SERVER_CONFIG_ID_PREFIX, $serverName),
             $definition
         );
     }
@@ -344,14 +408,14 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         Definition $networkServerDefinition,
         $serverName
     ) {
-        $definition = new Definition($container->getParameter(self::PARAMETER_SERVER_CLASS));
+        $definition = new Definition($container->getParameter(self::SERVER_CLASS_PARAM));
         $definition->addArgument($loopDefinition);
         $definition->addArgument($socketListenerDefinition);
         $definition->addArgument($networkServerDefinition);
         $definition->addTag(self::TAG_SERVER, ['alias' => $serverName]);
 
         $container->setDefinition(
-            $this->getServiceId(self::SERVER_SERVICE_ID_PREFIX, $serverName),
+            $this->getServiceId(self::SERVER_ID_PREFIX, $serverName),
             $definition
         );
     }
@@ -364,7 +428,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     private function getLoopServiceIdFromSocketListener(ContainerBuilder $container, $socketListenerName)
     {
         $definition = $container->getDefinition(
-            $this->getServiceId(self::SOCKET_LISTENER_SERVICE_ID_PREFIX, $socketListenerName)
+            $this->getServiceId(self::SOCKET_LISTENER_ID_PREFIX, $socketListenerName)
         );
         return $definition->getArgument(1);
     }
@@ -375,7 +439,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
      */
     private function getLoopServiceId($loopAlias)
     {
-        return $this->getServiceId(self::LOOP_SERVICE_ID_PREFIX, $loopAlias);
+        return $this->getServiceId(self::LOOP_ID_PREFIX, $loopAlias);
     }
 
     /**
@@ -394,6 +458,6 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
      */
     private function getFullServicePrefix($servicePrefix)
     {
-        return sprintf('%s.%s', self::SERVICE_VENDOR_PREFIX, $servicePrefix);
+        return sprintf('%s.%s', self::ID_VENDOR_PREFIX, $servicePrefix);
     }
 }
