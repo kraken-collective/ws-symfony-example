@@ -1,7 +1,6 @@
 <?php
 namespace KrakenCollective\WsSymfonyBundle\Command;
 
-use KrakenCollective\WsSymfonyBundle\DependencyInjection\KrakenCollectiveWsSymfonyExtension;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

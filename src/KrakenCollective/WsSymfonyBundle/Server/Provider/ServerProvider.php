@@ -1,7 +1,7 @@
 <?php
-namespace KrakenCollective\WsSymfonyBundle\Server;
+namespace KrakenCollective\WsSymfonyBundle\Server\Provider;
 
-use KrakenCollective\WsSymfonyBundle\Server\Provider\AbstractProvider;
+use KrakenCollective\WsSymfonyBundle\Server\Server;
 
 class ServerProvider extends AbstractProvider
 {
