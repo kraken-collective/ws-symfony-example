@@ -8,14 +8,14 @@
     <meta name="keywords" content="">
     <meta name="robots" content="all">
     {% block stylesheets %}
-        <link rel="stylesheet" href="/js/index.js" />
+        <link rel="stylesheet" href="{{ asset('css/index.css') }}" />
     {% endblock %}
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
 </head>
 <body>
     {% block body %}{% endblock %}
     {% block javascripts %}
-        <script type="text/javascript" charset="utf-8" href="/css/index.css" />
+        <script type="text/javascript" charset="utf-8" href="{{ asset('js/index.js') }}" />
     {% endblock %}
 </body>
 </html>
