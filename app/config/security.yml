@@ -20,7 +20,10 @@ security:
             security: false
 
         main:
-            http_basic: ~
+            anonymous: ~
+            form_login:
+                login_path: login
+                check_path: login
             logout:
                 path:   /logout
                 target: /
@@ -29,4 +32,5 @@ security:
         ROLE_ADMIN: ROLE_USER
 
     access_control:
+        - { path: ^/login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/, roles: ROLE_ADMIN }
