@@ -2,15 +2,17 @@
 
 namespace KrakenCollective\WsSymfonyBundle\Event;
 
+use Kraken\Network\NetworkMessageInterface;
+
 class ClientMessageEvent extends ClientEvent
 {
     /**
-     * @var string
+     * @var NetworkMessageInterface
      */
     protected $message;
 
     /**
-     * @param string $message
+     * @param NetworkMessageInterface $message
      */
     public function setMessage($message)
     {
@@ -18,7 +20,7 @@ class ClientMessageEvent extends ClientEvent
     }
 
     /**
-     * @return string
+     * @return NetworkMessageInterface
      */
     public function getMessage()
     {

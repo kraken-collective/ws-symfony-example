@@ -53,6 +53,7 @@ class ServerDefaultComponent implements NetworkComponentInterface
     public function handleMessage(NetworkConnectionInterface $conn, NetworkMessageInterface $message)
     {
         $event = new ClientMessageEvent(ClientEvent::MESSAGE, $conn);
+        $event->setMessage($message);
         $this->eventDispatcher->dispatch(Events::CLIENT_MESSAGE, $event);
     }
 
@@ -63,6 +64,7 @@ class ServerDefaultComponent implements NetworkComponentInterface
     public function handleError(NetworkConnectionInterface $conn, $ex)
     {
         $event = new ClientErrorEvent(ClientEvent::ERROR, $conn);
+        $event->setThrowable($ex);
         $this->eventDispatcher->dispatch(Events::CLIENT_ERROR, $event);
     }
 }

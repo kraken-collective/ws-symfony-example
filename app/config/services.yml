@@ -1,6 +1,6 @@
 services:
     app.messages.client_listener:
-        class: AppBundle\Messages\ClientEventListener
+        class: AppBundle\Chat\ChatEventListener
         tags:
             - { name: kernel.event_listener, event: 'kraken.ws.client_connected', method: onClientConnect }
             - { name: kernel.event_listener, event: 'kraken.ws.client_disconnected', method: onClientDisconnect }

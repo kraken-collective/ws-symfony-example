@@ -57,5 +57,8 @@
 {% endblock %}
 
 {% block javascripts %}
-    <script type="text/javascript" charset="utf-8" href="{{ asset('js/index.js') }}" />
+    <script type="text/javascript" charset="utf-8" src="{{ asset('js/index.js') }}"></script>
+    <script type="text/javascript" charset="utf-8">
+        var app = new Application("{{ endpoint }}");
+    </script>
 {% endblock %}
