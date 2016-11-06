@@ -62,12 +62,10 @@ class SessionProvider implements NetworkComponentAwareInterface, NetworkComponen
 
         $this->setOptions($options);
 
-        if ($serializer === null)
-        {
+        if ($serializer === null) {
             $serialClass = "\\Ratchet\\Session\\Serialize\\{$this->toClassCase(ini_get('session.serialize_handler'))}Handler";
 
-            if (!class_exists($serialClass))
-            {
+            if (!class_exists($serialClass)) {
                 throw new RuntimeException('Unable to parse session serialize handler.');
             }
 
@@ -76,8 +74,7 @@ class SessionProvider implements NetworkComponentAwareInterface, NetworkComponen
 
         $this->serializer = $serializer;
 
-        if ($aware !== null)
-        {
+        if ($aware !== null) {
             $aware->setComponent($this);
         }
     }
@@ -120,26 +117,19 @@ class SessionProvider implements NetworkComponentAwareInterface, NetworkComponen
         $queryParts = explode('&', $conn->httpRequest->getUri()->getQuery());
         $token = null;
 
-        foreach ($queryParts as $queryPart)
-        {
-            if (stripos($queryPart, 'token=') === 0)
-            {
+        foreach ($queryParts as $queryPart) {
+            if (stripos($queryPart, 'token=') === 0) {
                 $token = substr($queryPart, 6);
                 break;
             }
         }
 
-        if ($token === null)
-        {
+        if ($token === null) {
             throw new InvalidFormatException('Authorization token has not been passed!');
         }
 
         $conn->Session = new Session(new VirtualSessionStorage($this->handler, $token, $this->serializer));
-
-        if (ini_get('session.auto_start'))
-        {
-            $conn->Session->start();
-        }
+        $conn->Session->start();
 
         return $this->component->handleConnect($conn);
     }
