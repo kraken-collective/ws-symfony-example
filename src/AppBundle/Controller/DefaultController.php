@@ -13,9 +13,15 @@ class DefaultController extends Controller
      */
     public function indexAction(Request $request)
     {
-        // replace this example code with whatever you need
+        $sessionId = $request->cookies->get('PHPSESSID');
+        $address = '127.0.0.1';
+        $port = 6080;
+
         return $this->render('default/index.html.twig', [
             'base_dir' => realpath($this->getParameter('kernel.root_dir').'/..').DIRECTORY_SEPARATOR,
+            'token' => $sessionId,
+            'address' => $address,
+            'port' => $port
         ]);
     }
 }
