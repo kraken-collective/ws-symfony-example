@@ -23,6 +23,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
     const CONFIG_SOCKET_LISTENER = 'socket_listener';
 
     const TAG_LOOP_MODEL = 'kraken.loop_model';
+    const TAG_SERVER = 'kraken.server';
 
     const PARAMETER_LOOP_CLASS = 'kraken_collective.ws_symfony.loop';
     const PARAMETER_SELECT_LOOP_CLASS = 'kraken_collective.ws_symfony.select_loop';
@@ -304,6 +305,7 @@ class KrakenCollectiveWsSymfonyExtension extends ConfigurableExtension implement
         $definition = new Definition($container->getParameter(self::PARAMETER_SERVER_CLASS));
         $definition->addArgument($loopDefinition);
         $definition->addArgument($networkServerDefinition);
+        $definition->addTag(self::TAG_SERVER, ['alias' => $serverName]);
 
         $container->setDefinition(
             $this->getServiceId(self::SERVER_SERVICE_ID_PREFIX, $serverName),

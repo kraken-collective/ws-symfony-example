@@ -27,16 +27,9 @@ class StartCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        // TODO secure server name
-        // TODO load service via alias
-        $server = $this->getContainer()->get(
-            sprintf(
-                '%s.%s.%s',
-                KrakenCollectiveWsSymfonyExtension::SERVICE_VENDOR_PREFIX,
-                KrakenCollectiveWsSymfonyExtension::SERVER_SERVICE_ID_PREFIX,
-                $input->getArgument('server')
-            )
-        );
+        $serverName     = $input->getArgument('server');
+        $serverProvider = $this->getContainer()->get('kraken.ws.server_provider');
+        $server         = $serverProvider->getServer($serverName);
 
         $server->start();
     }

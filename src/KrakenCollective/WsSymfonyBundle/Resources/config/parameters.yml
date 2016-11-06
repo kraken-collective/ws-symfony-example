@@ -7,3 +7,4 @@ parameters:
     kraken_collective.ws_symfony.websocket_server:  Kraken\Network\Websocket\WsServer
     kraken_collective.ws_symfony.session_provider:  KrakenCollective\WsSymfonyBundle\Session\SessionProvider
     kraken_collective.ws_symfony.server:            KrakenCollective\WsSymfonyBundle\Server\Server
+    kraken_collective.ws_symfony.server_provider:   KrakenCollective\WsSymfonyBundle\Server\ServerProvider

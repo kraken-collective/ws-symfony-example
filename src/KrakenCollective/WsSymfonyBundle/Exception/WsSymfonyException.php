@@ -1,6 +1,8 @@
 <?php
 namespace KrakenCollective\WsSymfonyBundle\Exception;
 
-class RuntimeException extends WsSymfonyException
+use Exception;
+
+class WsSymfonyException extends Exception
 {
 }
