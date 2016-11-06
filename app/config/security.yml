@@ -19,7 +19,7 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
-        main:
+        default:
             anonymous: ~
             form_login:
                 login_path: login

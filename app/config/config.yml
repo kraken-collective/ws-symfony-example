@@ -81,9 +81,7 @@ kraken_collective_ws_symfony:
     server:
         chat:
             listener: chat_listener
-            session_handler: snc_redis.session.handler
-            authentication:
-                firewalls: [main]
+            authentication: ~
             routes:
                 - "/chat"
 
