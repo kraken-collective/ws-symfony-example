@@ -10,7 +10,7 @@ services:
             - "@security.token_storage"
 
     app.messages.client_listener:
-        class: KrakenCollective\WsSymfonyBundle\Event\ClientEventListener
+        class: AppBundle\Messages\ClientEventListener
         tags:
             - { name: kernel.event_listener, event: 'kraken.ws.client_connected', method: onClientConnect }
             - { name: kernel.event_listener, event: 'kraken.ws.client_disconnected', method: onClientDisconnect }
