@@ -25,6 +25,9 @@
     "symfony/phpunit-bridge": "^2.7 || ^3.0",
     "phpunit/phpunit": "~4.8|~5.0"
   },
+  "suggest": {
+    "snc/redis-bundle": "Provides an alternative SessionHandler (native session handlers won't work with this bundle)."
+  },
   "autoload": {
     "psr-4": {
       "KrakenCollective\\WsSymfonyBundle\\": ""
