@@ -81,11 +81,9 @@ kraken_collective_ws_symfony:
     server:
         test_server:
             listener: test_listener
-            component: app.network_component.test
             session_handler: snc_redis.session.handler
             routes:
                 - "/test"
-                - "/asdf"
 
     socket_listener:
         test_listener:
