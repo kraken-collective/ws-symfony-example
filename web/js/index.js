@@ -45,6 +45,7 @@ WsSocket.prototype.connect = function() {
 
     try
     {
+        console.log('endpoint=' + this.endpoint);
         this.connection.ws = new WebSocket(this.endpoint);
     }
     catch (err)
@@ -336,7 +337,7 @@ Application.prototype.start = function() {
         }
     };
     this.ws.error = function(sock, err) {
-        console.log('Error' + err);
+        console.log('Error, socket could not connect');
     };
     this.ws.connect();
 };

@@ -150,8 +150,8 @@ class ChatEventListener
      */
     public function onClientError(ClientErrorEvent $event)
     {
-//        $conn = $event->getConnection();
-//        $conn->close(); // TODO fix it - crashes with "Maximum function nesting level of 'X' reached, aborting!"
+        $conn = $event->getConnection();
+        $conn->close();
     }
 
     /**

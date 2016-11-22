@@ -125,7 +125,7 @@ class SessionProvider implements NetworkComponentAwareInterface, NetworkComponen
         }
 
         if ($token === null) {
-            throw new InvalidFormatException('Authorization token has not been passed!');
+            $token = '';
         }
 
         $conn->Session = new Session(new VirtualSessionStorage($this->handler, $token, $this->serializer));
