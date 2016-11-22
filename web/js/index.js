@@ -171,7 +171,7 @@ Chat.prototype.createMessage = function(id, sender, color, date, message) {
     nameDiv.className = 'name';
     nameDiv.style.backgroundColor = color;
     nameDiv.style.color = (new ColorPicker).invertCssColor(color);
-    nameDiv.innerHTML = sender;
+    nameDiv.innerHTML = sender + ' #' + id;
 
     dateDiv.className = 'date';
     dateDiv.innerHTML = date;

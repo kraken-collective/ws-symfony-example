@@ -2,6 +2,7 @@
 
 namespace AppBundle\Chat;
 
+use Kraken\Network\NetworkConnectionInterface;
 use KrakenCollective\WsSymfonyBundle\Event\ClientErrorEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientEvent;
 use KrakenCollective\WsSymfonyBundle\Event\ClientMessageEvent;
@@ -18,9 +19,14 @@ class ChatEventListener
     protected $tokenProvider;
 
     /**
-     * @var
+     * @var SplObjectStorage
      */
     private $conns;
+
+    /**
+     * @var array
+     */
+    private $users;
 
     /**
      * @param TokenStorageInterface $tokenStorage
@@ -29,6 +35,7 @@ class ChatEventListener
     {
         $this->tokenStorage = $tokenStorage;
         $this->conns = new SplObjectStorage();
+        $this->users = [];
     }
 
     /**
@@ -40,38 +47,44 @@ class ChatEventListener
     {
         $conn  = $event->getConnection();
         $id    = $conn->getResourceId();
-        $name  = 'User #' . $id;
+        $name  = $this->getUsername($conn);
         $color = '#' . dechex(rand(0x000000, 0xFFFFFF));
+        $newUser = false;
 
-        $bubble = [
-            'type'  => 'connect',
-            'data'  => [
-                'id'    => $id,
-                'name'  => $name,
-                'color' => $color,
-                'date'  => date('H:i:s')
-            ]
-        ];
-        $this->broadcast($bubble);
-
-        $conn->data = [
-            'id'    => $id,
-            'name'  => $name,
-            'color' => $color
-        ];
-        $this->conns->attach($conn);
-
-        $users = [];
-        foreach ($this->conns as $conn)
+        if (!isset($this->users[$name]))
         {
-            $users[] = [
-                'id'    => $conn->data['id'],
-                'name'  => $conn->data['name'],
-                'color' => $conn->data['color']
+            $newUser = true;
+            $this->users[$name] = [
+                'data'  => [
+                    'id'    => $id,
+                    'name'  => $name,
+                    'color' => $color,
+                    'date'  => date('H:i:s')
+                ],
+                'conns' => new SplObjectStorage(),
             ];
         }
 
+        if ($newUser)
+        {
+            $bubble = [
+                'type' => 'connect',
+                'data' => $this->users[$name]['data']
+            ];
+            $this->broadcast($bubble);
+        }
+
+        $conns = $this->users[$name]['conns'];
+        $conns->attach($conn);
+
+        $users = [];
+        foreach ($this->users as $user)
+        {
+            $users[] = $user['data'];
+        }
+
         $bubble['type'] = 'init';
+        $bubble['data'] = $this->users[$name]['data'];
         $bubble['data']['users'] = $users;
 
         $conn->send((string)json_encode($bubble));
@@ -85,18 +98,22 @@ class ChatEventListener
     public function onClientDisconnect(ClientEvent $event)
     {
         $conn = $event->getConnection();
-        $this->conns->detach($conn);
+        $name = $this->getUsername($conn);
 
-        $bubble = [
-            'type'  => 'disconnect',
-            'data'  => [
-                'id'    => $conn->data['id'],
-                'name'  => $conn->data['name'],
-                'color' => $conn->data['color'],
-                'date'  => date('H:i:s')
-            ]
-        ];
-        $this->broadcast($bubble);
+        $data  = $this->users[$name]['data'];
+        $conns = $this->users[$name]['conns'];
+        $conns->detach($conn);
+
+        if (count($conns) === 0)
+        {
+            unset($this->users[$name]);
+
+            $bubble = [
+                'type' => 'disconnect',
+                'data' => $data
+            ];
+            $this->broadcast($bubble);
+        }
     }
 
     /**
@@ -107,17 +124,8 @@ class ChatEventListener
     public function onClientMessage(ClientMessageEvent $event)
     {
         $conn = $event->getConnection();
+        $name = $this->getUsername($conn);
         $message = $event->getMessage();
-
-        $token = $this->tokenStorage->getToken();
-
-        if ($token instanceof AnonymousToken) {
-            $user = 'anonymous';
-        } else {
-            $user = $token->getUser();
-        }
-
-        $username = $user instanceof UserInterface ? $user->getUsername() : $user;
 
         $data = json_decode($message->read(), true);
         $type = $data['type'];
@@ -125,15 +133,11 @@ class ChatEventListener
 
         if ($type === 'message')
         {
+            $bubble = $this->users[$name]['data'];
+            $bubble['mssg'] = $data;
             $bubble = [
                 'type' => 'message',
-                'data' => [
-                    'id'    => $conn->data['id'],
-                    'name'  => $conn->data['name'],
-                    'color' => $conn->data['color'],
-                    'date'  => date('H:i:s'),
-                    'mssg'  => sprintf('[%s] %s', $username, $data)
-                ]
+                'data' => $bubble
             ];
             return $this->broadcast($bubble);
         }
@@ -146,8 +150,8 @@ class ChatEventListener
      */
     public function onClientError(ClientErrorEvent $event)
     {
-        $conn = $event->getConnection();
-        $conn->close(); // TODO fix it - crashes with "Maximum function nesting level of 'X' reached, aborting!"
+//        $conn = $event->getConnection();
+//        $conn->close(); // TODO fix it - crashes with "Maximum function nesting level of 'X' reached, aborting!"
     }
 
     /**
@@ -155,9 +159,22 @@ class ChatEventListener
      */
     protected function broadcast($message)
     {
-        foreach ($this->conns as $conn)
+        foreach ($this->users as $user)
         {
-            $conn->send((string) json_encode($message));
+            foreach ($user['conns'] as $conn)
+            {
+                $conn->send((string)json_encode($message));
+            }
         }
+    }
+
+    private function getUsername(NetworkConnectionInterface $conn)
+    {
+        $token = $this->tokenStorage->getToken();
+
+        $user = $token instanceof AnonymousToken ? 'anon-' . $conn->getResourceId() : $token->getUser();
+        $username = $user instanceof UserInterface ? $user->getUsername() : $user;
+
+        return $username;
     }
 }
