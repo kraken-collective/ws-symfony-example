@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "4dfba97bf316803c066b3603c332bed3",
-    "content-hash": "0c2c5fee53d51b350a9d91058099e7c0",
+    "hash": "4709336a8d3bee88046177c2aaab3867",
+    "content-hash": "52bcd1bc17bd13b3c63971b493f7cfa6",
     "packages": [
         {
             "name": "cboden/ratchet",
@@ -1342,6 +1342,64 @@
                 "sql"
             ],
             "time": "2014-01-12 16:20:24"
+        },
+        {
+            "name": "kraken-collective/ws-symfony-bundle",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kraken-collective/ws-symfony.git",
+                "reference": "c06943699dfe895324ca6c9701944581b1a7c2c6"
+            },
+            "require": {
+                "kraken-php/network": "dev-master",
+                "php": "^5.5.9 || ^7.0",
+                "symfony/console": "^3.0",
+                "symfony/framework-bundle": "^3.0",
+                "symfony/security-bundle": "^3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~4.8|~5.0",
+                "symfony/phpunit-bridge": "^2.7 || ^3.0"
+            },
+            "suggest": {
+                "snc/redis-bundle": "Provides an alternative SessionHandler (native session handlers won't work with this bundle)."
+            },
+            "type": "symfony-bundle",
+            "autoload": {
+                "psr-4": {
+                    "KrakenCollective\\WsSymfonyBundle\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "KrakenCollective\\WsSymfonyBundle\\Tests\\": "Tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kamil Jamróz"
+                },
+                {
+                    "name": "Michał Kurzeja",
+                    "email": "mike.kurzeja@gmail.com"
+                }
+            ],
+            "description": "Symfony Websocket Bundle",
+            "homepage": "https://github.com/kraken-collective/ws-symfony",
+            "keywords": [
+                "bundle",
+                "kraken",
+                "symfony",
+                "websocket"
+            ],
+            "time": "2016-11-25 15:09:37"
         },
         {
             "name": "kraken-php/event",
@@ -3219,7 +3277,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "kraken-php/network": 20
+        "kraken-php/network": 20,
+        "kraken-collective/ws-symfony-bundle": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
