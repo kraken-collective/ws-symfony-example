@@ -8,3 +8,6 @@ var
 # Misc
 app/config/parameters.yml
 
+# Lock Files
+*.lock
+

@@ -1,6 +1,6 @@
 {
-    "name": "mike/ws-symfony2",
-    "license": "proprietary",
+    "name": "kraken-collective/ws-symfony-bundle-example",
+    "license": "MIT",
     "type": "project",
     "autoload": {
         "psr-4": {
@@ -28,7 +28,7 @@
         "sensio/distribution-bundle": "^5.0",
         "sensio/framework-extra-bundle": "^3.0.2",
         "incenteev/composer-parameter-handler": "^2.0",
-        "kraken-php/network": "dev-master#7a8420707e1f7c930bf653dd8c7b59d9c59e1f63",
+        "kraken-php/network": "^0.3.2",
         "snc/redis-bundle": "^2.0",
         "predis/predis": "^1.0",
         "kraken-collective/ws-symfony-bundle": "dev-master"
