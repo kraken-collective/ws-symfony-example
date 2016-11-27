@@ -63,11 +63,5 @@
         "incenteev-parameters": {
             "file": "app/config/parameters.yml"
         }
-    },
-    "repositories": [
-        {
-            "url": "https://github.com/kraken-collective/ws-symfony.git",
-            "type": "git"
-        }
-    ]
+    }
 }
